@@ -114,7 +114,9 @@ final class BenchmarkStatement extends Statement
                     base.evaluate();
                     
                 } catch (Exception ex) {
-                    failure = ex;
+                    if (round >= warmupRounds) {
+                        failure = ex;
+                    }
                 }
             }
             
@@ -134,7 +136,7 @@ final class BenchmarkStatement extends Statement
             return new SingleResult(startTime, afterGC, endTime, roundBlockedTime, failure);
         }
 
-        protected Result computeResult()
+        protected Result computeResult() throws Exception
         {
             final Statistics stats = Statistics.from(
                 results.subList(warmupRounds, totalRounds), median);
@@ -146,6 +148,10 @@ final class BenchmarkStatement extends Statement
                 }
             }
 
+            if (failures.size() == benchmarkRounds) {
+                throw new Exception("All rounds have failed");
+            }
+            
             return new Result(description, benchmarkRounds, warmupRounds, warmupTime,
                 benchmarkTime, stats.evaluation, stats.blocked, stats.gc, gcSnapshot, 1, failures);
         }
@@ -290,7 +296,7 @@ final class BenchmarkStatement extends Statement
         }
 
         @Override
-        protected Result computeResult()
+        protected Result computeResult() throws Exception
         {
             Result r = super.computeResult();
             r.concurrency = this.concurrency;

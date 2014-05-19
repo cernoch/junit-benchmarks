@@ -30,15 +30,15 @@ public class TestCountFails {
     @Rule
     public TestRule runBenchmarks = new BenchmarkRule();
     
-    private int sleep = 0;
+    private int sleep = 120;
     
     @Test(timeout = 150)
     @BenchmarkOptions(
-            warmupRounds = 0,
-            benchmarkRounds = 3,
+            warmupRounds = 1,
+            benchmarkRounds = 10,
             countFails = true)
     public void run() throws InterruptedException {
-        sleep += 100;
+        sleep += 10;
         Thread.sleep(sleep);
     }
 }
