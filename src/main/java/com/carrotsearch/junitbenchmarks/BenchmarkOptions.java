@@ -29,6 +29,11 @@ public @interface BenchmarkOptions
     public final static boolean MEDIAN = false;
     
     /**
+     * Count failures instead of stopping at the first one.
+     */
+    public final static boolean COUNT_FAILS = false;
+    
+    /**
      * @return Call {@link System#gc()} before each test. This may slow down the tests in
      *         a significant way, so disabling it is sensible in most cases.
      */
@@ -72,4 +77,9 @@ public @interface BenchmarkOptions
      * Compute median instead of the mean value.
      */
     boolean median() default MEDIAN;
+    
+    /**
+     * Count failures instead of stopping at the first one.
+     */
+    boolean countFails() default COUNT_FAILS;
 }

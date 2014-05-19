@@ -1,11 +1,6 @@
 package com.carrotsearch.junitbenchmarks;
 
-import static com.carrotsearch.junitbenchmarks.BenchmarkOptionsSystemProperties.BENCHMARK_ROUNDS_PROPERTY;
-import static com.carrotsearch.junitbenchmarks.BenchmarkOptionsSystemProperties.CONCURRENCY_PROPERTY;
-import static com.carrotsearch.junitbenchmarks.BenchmarkOptionsSystemProperties.IGNORE_ANNOTATION_OPTIONS_PROPERTY;
-import static com.carrotsearch.junitbenchmarks.BenchmarkOptionsSystemProperties.IGNORE_CALLGC_PROPERTY;
-import static com.carrotsearch.junitbenchmarks.BenchmarkOptionsSystemProperties.MEDIAN_PROPERTY;
-import static com.carrotsearch.junitbenchmarks.BenchmarkOptionsSystemProperties.WARMUP_ROUNDS_PROPERTY;
+import static com.carrotsearch.junitbenchmarks.BenchmarkOptionsSystemProperties.*;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
@@ -64,6 +59,7 @@ final class BenchmarkStatement extends Statement
         final protected int totalRounds;
         
         final protected boolean median;
+        final protected boolean countFails;
 
         final protected Clock clock;
 
@@ -76,7 +72,9 @@ final class BenchmarkStatement extends Statement
             }
         };
 
-        protected BaseEvaluator(int warmupRounds, int benchmarkRounds, int totalRounds, Clock clock, boolean median)
+        protected BaseEvaluator(int warmupRounds,
+                int benchmarkRounds, int totalRounds, Clock clock,
+                boolean median, boolean countFails)
         {
             super();
             this.warmupRounds = warmupRounds;
@@ -84,6 +82,7 @@ final class BenchmarkStatement extends Statement
             this.totalRounds = totalRounds;
             this.clock = clock;
             this.median = median;
+            this.countFails = countFails;
             this.results = new ArrayList<SingleResult>(totalRounds);
         }
 
@@ -105,7 +104,20 @@ final class BenchmarkStatement extends Statement
                 warmupTime = benchmarkTime - warmupTime;
             }
 
-            base.evaluate();
+            Exception failure = null;
+            
+            if (!countFails) {
+                base.evaluate();
+                
+            } else {
+                try {
+                    base.evaluate();
+                    
+                } catch (Exception ex) {
+                    failure = ex;
+                }
+            }
+            
             final long endTime = clock.time();
 
             final long roundBlockedTime;
@@ -119,16 +131,23 @@ final class BenchmarkStatement extends Statement
                 roundBlockedTime = 0;
             }
 
-            return new SingleResult(startTime, afterGC, endTime, roundBlockedTime);
+            return new SingleResult(startTime, afterGC, endTime, roundBlockedTime, failure);
         }
 
         protected Result computeResult()
         {
             final Statistics stats = Statistics.from(
                 results.subList(warmupRounds, totalRounds), median);
+            
+            List<Exception> failures = new ArrayList<Exception>();
+            for (SingleResult result : results) {
+                if (result.failure != null) {
+                    failures.add(result.failure);
+                }
+            }
 
             return new Result(description, benchmarkRounds, warmupRounds, warmupTime,
-                benchmarkTime, stats.evaluation, stats.blocked, stats.gc, gcSnapshot, 1);
+                benchmarkTime, stats.evaluation, stats.blocked, stats.gc, gcSnapshot, 1, failures);
         }
     }
 
@@ -137,9 +156,9 @@ final class BenchmarkStatement extends Statement
      */
     private final class SequentialEvaluator extends BaseEvaluator
     {
-        SequentialEvaluator(int warmupRounds, int benchmarkRounds, int totalRounds, Clock clock, boolean median)
+        SequentialEvaluator(int warmupRounds, int benchmarkRounds, int totalRounds, Clock clock, boolean median, boolean countFails)
         {
-            super(warmupRounds, benchmarkRounds, totalRounds, clock, median);
+            super(warmupRounds, benchmarkRounds, totalRounds, clock, median, countFails);
         }
 
         @Override
@@ -196,9 +215,9 @@ final class BenchmarkStatement extends Statement
 
 
         ConcurrentEvaluator(int warmupRounds, int benchmarkRounds, int totalRounds,
-                            int concurrency, Clock clock, boolean median)
+                            int concurrency, Clock clock, boolean median, boolean countFails)
         {
-            super(warmupRounds, benchmarkRounds, totalRounds, clock, median);
+            super(warmupRounds, benchmarkRounds, totalRounds, clock, median, countFails);
 
             this.concurrency = concurrency;
             this.latch = new CountDownLatch(1);
@@ -370,10 +389,12 @@ final class BenchmarkStatement extends Statement
 
         final boolean median = getBooleanOption(options.median(), MEDIAN_PROPERTY, BenchmarkOptions.MEDIAN);
 
+        final boolean countFails = getBooleanOption(options.countFails(), COUNT_FAILS_PROPERTY, BenchmarkOptions.COUNT_FAILS);
+
         final BaseEvaluator evaluator;
         if (concurrency == BenchmarkOptions.CONCURRENCY_SEQUENTIAL)
         {
-            evaluator = new SequentialEvaluator(warmupRounds, benchmarkRounds, totalRounds, options.clock(), median);
+            evaluator = new SequentialEvaluator(warmupRounds, benchmarkRounds, totalRounds, options.clock(), median, countFails);
         }
         else
         {
@@ -389,7 +410,7 @@ final class BenchmarkStatement extends Statement
                     : concurrency);
 
             evaluator = new ConcurrentEvaluator(
-                warmupRounds, benchmarkRounds, totalRounds, threads, options.clock(), median);
+                warmupRounds, benchmarkRounds, totalRounds, threads, options.clock(), median, countFails);
         }
 
         final Result result = evaluator.evaluate();

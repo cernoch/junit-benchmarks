@@ -33,6 +33,11 @@ public final class BenchmarkOptionsSystemProperties
     public final static String MEDIAN_PROPERTY = "jub.median";
     
     /**
+     * <code>{@value}</code>: count failures instead of stopping at the first.
+     */
+    public final static String COUNT_FAILS_PROPERTY = "jub.countfails";
+    
+    /**
      * <code>{@value}</code>: if <code>true</code>, the defaults (or property values) take precedence over
      * {@link BenchmarkOptions} annotations.
      */

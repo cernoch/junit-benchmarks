@@ -1,6 +1,7 @@
 package com.carrotsearch.junitbenchmarks;
 
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.logging.Logger;
 
 import org.junit.runner.Description;
@@ -18,7 +19,8 @@ public final class Result
     public final Measures blockedAverage;
     public final Measures gcAverage;
     public final GCSnapshot gcInfo;
-
+    public final List<Exception> failures;
+    
     /**
      * Concurrency level (number of used threads).
      */
@@ -35,6 +37,7 @@ public final class Result
      * @param blockedAverage Measures and standard deviation from thread blocks.
      * @param gcInfo Extra information about GC activity.
      * @param concurrency {@link BenchmarkOptions#concurrency()} setting (or global override).
+     * @param failures List of exceptions, each for one failed round.
      */
     public Result(
         Description description,
@@ -46,7 +49,8 @@ public final class Result
         Measures blockedAverage,
         Measures gcAverage,
         GCSnapshot gcInfo,
-        int concurrency)
+        int concurrency,
+        List<Exception> failures)
     {
         this.description = description;
         this.benchmarkRounds = benchmarkRounds;
@@ -58,6 +62,7 @@ public final class Result
         this.gcAverage = gcAverage;
         this.gcInfo = gcInfo;
         this.concurrency = concurrency;
+        this.failures = failures;
     }
 
     /**

@@ -1,5 +1,7 @@
 package com.carrotsearch.junitbenchmarks;
 
+import java.util.List;
+
 /**
  * A result of a single test.
  */
@@ -9,13 +11,15 @@ class SingleResult
     public final long afterGC;
     public final long endTime;
     public final long blockTime;
+    public final Exception failure;
 
-    public SingleResult(long startTime, long afterGC, long endTime, long blockTime)
+    public SingleResult(long startTime, long afterGC, long endTime, long blockTime, Exception failure)
     {
         this.startTime = startTime;
         this.afterGC = afterGC;
         this.endTime = endTime;
         this.blockTime = blockTime;
+        this.failure = failure;
     }
 
     public long gcTime()
