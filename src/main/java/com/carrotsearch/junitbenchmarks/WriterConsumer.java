@@ -23,13 +23,19 @@ public final class WriterConsumer implements IResultsConsumer
     public void accept(Result result) throws IOException
     {
         w.write(String.format(Locale.ENGLISH,
-            "%s.%s:\n" +
+            "%s.%s:\n",
+            result.getShortTestClassName(),
+            result.getTestMethodName()));
+        
+        for (Exception ex : result.failures) {
+            ex.printStackTrace(new PrintWriter(w));
+        }
+        
+        w.write(String.format(Locale.ENGLISH,
             "\t[measured %d out of %d rounds, %s]\n" +
             "\t[round: %s, round.block: %s]\n" + 
             "\t[round.gc: %s, GC.calls: %d, GC.time: %.2f]\n" +
             "\t[time.total: %.2f, time.warmup: %.2f, time.bench: %.2f]\n",
-            result.getShortTestClassName(),
-            result.getTestMethodName(),
             result.benchmarkRounds, 
             result.benchmarkRounds + result.warmupRounds, 
             concurrencyToText(result),
@@ -45,15 +51,11 @@ public final class WriterConsumer implements IResultsConsumer
         
         if (!result.failures.isEmpty()) {
             w.write(String.format(
-                "!!!\t[%d out of %d (%d%%) rounds have failed]\n",
+                "!\t[%d out of %d (%d%%) rounds have failed]\n",
                 result.failures.size(),
                 result.benchmarkRounds,
                 100 * result.failures.size() / result.benchmarkRounds
             ));
-            
-            for (Exception ex : result.failures) {
-                ex.printStackTrace(new PrintWriter(w));
-            }
         }
         
         w.flush();
