@@ -80,6 +80,11 @@ public final class BenchmarkOptionsSystemProperties
     public final static String CONSUMERS_PROPERTY = "jub.consumers";
 
     /**
+     * <code>{@value}</code>: count failures instead of stopping at the first.
+     */
+    public final static String IGNORE_EXCEPTIONS_PROPERTY = "jub.countfails";
+    
+    /**
      * The default consumer of benchmark results.
      */
     static IResultsConsumer [] consumers;

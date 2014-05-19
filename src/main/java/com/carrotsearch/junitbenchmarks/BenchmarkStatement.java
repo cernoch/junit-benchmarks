@@ -2,6 +2,7 @@ package com.carrotsearch.junitbenchmarks;
 
 import static com.carrotsearch.junitbenchmarks.BenchmarkOptionsSystemProperties.BENCHMARK_ROUNDS_PROPERTY;
 import static com.carrotsearch.junitbenchmarks.BenchmarkOptionsSystemProperties.CONCURRENCY_PROPERTY;
+import static com.carrotsearch.junitbenchmarks.BenchmarkOptionsSystemProperties.IGNORE_EXCEPTIONS_PROPERTY;
 import static com.carrotsearch.junitbenchmarks.BenchmarkOptionsSystemProperties.IGNORE_ANNOTATION_OPTIONS_PROPERTY;
 import static com.carrotsearch.junitbenchmarks.BenchmarkOptionsSystemProperties.IGNORE_CALLGC_PROPERTY;
 import static com.carrotsearch.junitbenchmarks.BenchmarkOptionsSystemProperties.WARMUP_ROUNDS_PROPERTY;
@@ -62,6 +63,8 @@ final class BenchmarkStatement extends Statement
         final protected int benchmarkRounds;
         final protected int totalRounds;
         
+        final protected boolean ignoreExceptions;
+
         final protected Clock clock;
 
         protected long warmupTime;
@@ -73,13 +76,14 @@ final class BenchmarkStatement extends Statement
             }
         };
 
-        protected BaseEvaluator(int warmupRounds, int benchmarkRounds, int totalRounds, Clock clock)
+        protected BaseEvaluator(int warmupRounds, int benchmarkRounds, int totalRounds, Clock clock, boolean ignoreExceptions)
         {
             super();
             this.warmupRounds = warmupRounds;
             this.benchmarkRounds = benchmarkRounds;
             this.totalRounds = totalRounds;
             this.clock = clock;
+            this.ignoreExceptions = ignoreExceptions;
             this.results = new ArrayList<SingleResult>(totalRounds);
         }
 
@@ -101,7 +105,20 @@ final class BenchmarkStatement extends Statement
                 warmupTime = benchmarkTime - warmupTime;
             }
 
-            base.evaluate();
+            Exception failure = null;
+            
+            if (!ignoreExceptions) {
+                base.evaluate();
+                
+            } else {
+                try {
+                    base.evaluate();
+                    
+                } catch (Exception ex) {
+                    failure = ex;
+                }
+            }
+            
             final long endTime = clock.time();
 
             final long roundBlockedTime;
@@ -115,7 +132,7 @@ final class BenchmarkStatement extends Statement
                 roundBlockedTime = 0;
             }
 
-            return new SingleResult(startTime, afterGC, endTime, roundBlockedTime);
+            return new SingleResult(startTime, afterGC, endTime, roundBlockedTime, failure);
         }
 
         protected Result computeResult()
@@ -136,9 +153,9 @@ final class BenchmarkStatement extends Statement
      */
     private final class SequentialEvaluator extends BaseEvaluator
     {
-        SequentialEvaluator(int warmupRounds, int benchmarkRounds, int totalRounds, Clock clock)
+        SequentialEvaluator(int warmupRounds, int benchmarkRounds, int totalRounds, Clock clock, boolean ignoreExceptions)
         {
-            super(warmupRounds, benchmarkRounds, totalRounds, clock);
+            super(warmupRounds, benchmarkRounds, totalRounds, clock, ignoreExceptions);
         }
 
         @Override
@@ -195,10 +212,10 @@ final class BenchmarkStatement extends Statement
 
 
         ConcurrentEvaluator(int warmupRounds, int benchmarkRounds, int totalRounds,
-                            int concurrency, Clock clock)
+                            int concurrency, Clock clock, boolean ignoreExceptions)
         {
-            super(warmupRounds, benchmarkRounds, totalRounds, clock);
-
+            super(warmupRounds, benchmarkRounds, totalRounds, clock, ignoreExceptions);
+            
             this.concurrency = concurrency;
             this.latch = new CountDownLatch(1);
         }
@@ -367,10 +384,13 @@ final class BenchmarkStatement extends Statement
 
         final int totalRounds = warmupRounds + benchmarkRounds;
 
+        final boolean ignoreExceptions = getBooleanOption(options.ignoreExceptions(),
+                IGNORE_EXCEPTIONS_PROPERTY, BenchmarkOptions.IGNORE_EXCEPTIONS);
+
         final BaseEvaluator evaluator;
         if (concurrency == BenchmarkOptions.CONCURRENCY_SEQUENTIAL)
         {
-            evaluator = new SequentialEvaluator(warmupRounds, benchmarkRounds, totalRounds, options.clock());
+            evaluator = new SequentialEvaluator(warmupRounds, benchmarkRounds, totalRounds, options.clock(), ignoreExceptions);
         }
         else
         {
@@ -386,7 +406,7 @@ final class BenchmarkStatement extends Statement
                     : concurrency);
 
             evaluator = new ConcurrentEvaluator(
-                warmupRounds, benchmarkRounds, totalRounds, threads, options.clock());
+                warmupRounds, benchmarkRounds, totalRounds, threads, options.clock(), ignoreExceptions);
         }
 
         final Result result = evaluator.evaluate();

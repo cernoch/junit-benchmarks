@@ -117,4 +117,17 @@ public final class Result
     {
         return concurrency;
     }
+    
+    public int getFailureCount()
+    {
+        int out = 0;
+        
+        for (SingleResult run : runs) {
+            if (run.thrown != null) {
+                out++;
+            }
+        }
+        
+        return out;
+    }
 }

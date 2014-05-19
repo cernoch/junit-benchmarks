@@ -24,6 +24,11 @@ public @interface BenchmarkOptions
     public final static int CONCURRENCY_AVAILABLE_CORES = 0;
     
     /**
+     * Count failures instead of stopping at the first one.
+     */
+    public final static boolean IGNORE_EXCEPTIONS = false;
+    
+    /**
      * @return Call {@link System#gc()} before each test. This may slow down the tests in
      *         a significant way, so disabling it is sensible in most cases.
      */
@@ -62,4 +67,9 @@ public @interface BenchmarkOptions
      *
      */
     Clock clock() default Clock.REAL_TIME;
+    
+    /**
+     * Count failures instead of stopping at the first one.
+     */
+    boolean ignoreExceptions() default IGNORE_EXCEPTIONS;
 }

@@ -3,7 +3,7 @@ package com.carrotsearch.junitbenchmarks;
 /**
  * A result of a single test.
  */
-class SingleResult
+public class SingleResult
 {
     public final long startTime;
     public final long afterGC;

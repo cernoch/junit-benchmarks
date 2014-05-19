@@ -104,7 +104,22 @@ public final class XMLConsumer extends AutocloseConsumer implements Closeable
             attribute(b, "evaluation", nf.format(single.evaluationTime()));
             attribute(b, "gc", nf.format(single.gcTime()));
             attribute(b, "blocked", nf.format(single.blockTime));
-            b.append("/>\n");
+            
+            if (single.thrown == null) {
+                b.append("/>\n");
+                
+            } else {
+                b.append("\n\t\t\t");
+                attribute(b, "thrown", single.thrown.getClass().getName());
+                b.append("\n\t\t\t");
+                attribute(b, "message", single.thrown.getMessage());
+                
+                b.append(">\n");
+                StringWriter trace = new StringWriter();
+                single.thrown.printStackTrace(new PrintWriter(trace));
+                b.append(Escape.xmlAttrEscape(trace.toString()));
+                b.append("</run>\n");
+            }
         }
         
         b.append("\t</testname>\n\n");        

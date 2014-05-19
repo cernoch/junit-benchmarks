@@ -23,10 +23,13 @@ public final class WriterConsumer implements IResultsConsumer
     public void accept(Result result) throws IOException
     {
         w.write(String.format(Locale.ENGLISH,
-            "%s: [measured %d out of %d rounds, %s]\n" +
-            " round: %ss, round.block: %s, round.gc: %s, GC.calls: %d, GC.time: %.2fs," +
-            " time.total: %.2fs, time.warmup: %.2fs, time.bench: %.2fs\n",
-            result.getShortTestClassName() + "." + result.getTestMethodName(),
+            "%s.%s:\n" +
+            "\t[measured %d out of %d rounds, %s]\n" +
+            "\t[round: %s, round.block: %s]\n" + 
+            "\t[round.gc: %s, GC.calls: %d, GC.time: %.2f]\n" +
+            "\t[time.total: %.2f, time.warmup: %.2f, time.bench: %.2f]\n",
+            result.getShortTestClassName(),
+            result.getTestMethodName(),
             result.benchmarkRounds, 
             result.benchmarkRounds + result.warmupRounds, 
             concurrencyToText(result),
@@ -39,6 +42,16 @@ public final class WriterConsumer implements IResultsConsumer
             result.warmupTime * 0.001, 
             result.benchmarkTime * 0.001
         ));
+        
+        if (result.getFailureCount() > 0) {
+            w.write(String.format(
+                "!!!\t[%d out of %d (%d%%) rounds have failed]\n",
+                result.getFailureCount(),
+                result.benchmarkRounds,
+                100 * result.getFailureCount() / result.benchmarkRounds
+            ));
+        }
+        
         w.flush();
     }
 
