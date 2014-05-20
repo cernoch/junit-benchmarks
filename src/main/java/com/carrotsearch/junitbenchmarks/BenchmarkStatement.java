@@ -148,10 +148,6 @@ final class BenchmarkStatement extends Statement
                 }
             }
 
-            if (failures.size() == benchmarkRounds) {
-                throw new Exception("All rounds have failed");
-            }
-            
             return new Result(description, benchmarkRounds, warmupRounds, warmupTime,
                 benchmarkTime, stats.evaluation, stats.blocked, stats.gc, gcSnapshot, 1, failures);
         }
