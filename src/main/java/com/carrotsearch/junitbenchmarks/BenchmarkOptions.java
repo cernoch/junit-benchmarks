@@ -22,11 +22,6 @@ public @interface BenchmarkOptions
      * by {@link Runtime#availableProcessors()}.
      */
     public final static int CONCURRENCY_AVAILABLE_CORES = 0;
-
-    /**
-     * Use median instead of mean.
-     */
-    public final static boolean MEDIAN = false;
     
     /**
      * @return Call {@link System#gc()} before each test. This may slow down the tests in
@@ -67,9 +62,4 @@ public @interface BenchmarkOptions
      *
      */
     Clock clock() default Clock.REAL_TIME;
-    
-    /**
-     * Compute median instead of the mean value.
-     */
-    boolean median() default MEDIAN;
 }

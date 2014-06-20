@@ -28,11 +28,6 @@ public final class BenchmarkOptionsSystemProperties
     public final static String CONCURRENCY_PROPERTY = "jub.concurrency";
     
     /**
-     * <code>{@value}</code>: use median instead of mean.
-     */
-    public final static String MEDIAN_PROPERTY = "jub.median";
-    
-    /**
      * <code>{@value}</code>: if <code>true</code>, the defaults (or property values) take precedence over
      * {@link BenchmarkOptions} annotations.
      */

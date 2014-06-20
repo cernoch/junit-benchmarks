@@ -1,6 +1,8 @@
 package com.carrotsearch.junitbenchmarks;
 
 import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.List;
 import java.util.logging.Logger;
 
 import org.junit.runner.Description;
@@ -14,10 +16,12 @@ public final class Result
 
     public final int benchmarkRounds, warmupRounds;
     public final long warmupTime, benchmarkTime;
-    public final Average roundAverage;
-    public final Average blockedAverage;
-    public final Average gcAverage;
+    public final Measures roundAverage;
+    public final Measures blockedAverage;
+    public final Measures gcAverage;
     public final GCSnapshot gcInfo;
+    
+    public final List<SingleResult> runs;
 
     /**
      * Concurrency level (number of used threads).
@@ -35,6 +39,7 @@ public final class Result
      * @param blockedAverage Average and standard deviation from thread blocks.
      * @param gcInfo Extra information about GC activity.
      * @param concurrency {@link BenchmarkOptions#concurrency()} setting (or global override).
+     * @param runs Information about individual runs.
      */
     public Result(
         Description description,
@@ -42,11 +47,12 @@ public final class Result
         int warmupRounds, 
         long warmupTime, 
         long benchmarkTime,
-        Average roundAverage,
-        Average blockedAverage,
-        Average gcAverage,
+        Measures roundAverage,
+        Measures blockedAverage,
+        Measures gcAverage,
         GCSnapshot gcInfo,
-        int concurrency)
+        int concurrency,
+        List<SingleResult> runs)
     {
         this.description = description;
         this.benchmarkRounds = benchmarkRounds;
@@ -58,6 +64,7 @@ public final class Result
         this.gcAverage = gcAverage;
         this.gcInfo = gcInfo;
         this.concurrency = concurrency;
+        this.runs = Collections.unmodifiableList(runs);
     }
 
     /**

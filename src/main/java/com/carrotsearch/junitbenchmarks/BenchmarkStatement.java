@@ -4,7 +4,6 @@ import static com.carrotsearch.junitbenchmarks.BenchmarkOptionsSystemProperties.
 import static com.carrotsearch.junitbenchmarks.BenchmarkOptionsSystemProperties.CONCURRENCY_PROPERTY;
 import static com.carrotsearch.junitbenchmarks.BenchmarkOptionsSystemProperties.IGNORE_ANNOTATION_OPTIONS_PROPERTY;
 import static com.carrotsearch.junitbenchmarks.BenchmarkOptionsSystemProperties.IGNORE_CALLGC_PROPERTY;
-import static com.carrotsearch.junitbenchmarks.BenchmarkOptionsSystemProperties.MEDIAN_PROPERTY;
 import static com.carrotsearch.junitbenchmarks.BenchmarkOptionsSystemProperties.WARMUP_ROUNDS_PROPERTY;
 
 import java.lang.management.ManagementFactory;
@@ -63,8 +62,6 @@ final class BenchmarkStatement extends Statement
         final protected int benchmarkRounds;
         final protected int totalRounds;
         
-        final protected boolean median;
-
         final protected Clock clock;
 
         protected long warmupTime;
@@ -76,14 +73,13 @@ final class BenchmarkStatement extends Statement
             }
         };
 
-        protected BaseEvaluator(int warmupRounds, int benchmarkRounds, int totalRounds, Clock clock, boolean median)
+        protected BaseEvaluator(int warmupRounds, int benchmarkRounds, int totalRounds, Clock clock)
         {
             super();
             this.warmupRounds = warmupRounds;
             this.benchmarkRounds = benchmarkRounds;
             this.totalRounds = totalRounds;
             this.clock = clock;
-            this.median = median;
             this.results = new ArrayList<SingleResult>(totalRounds);
         }
 
@@ -124,11 +120,14 @@ final class BenchmarkStatement extends Statement
 
         protected Result computeResult()
         {
-            final Statistics stats = Statistics.from(
-                results.subList(warmupRounds, totalRounds), median);
+            final List<SingleResult> benchmarkRuns
+                = results.subList(warmupRounds, totalRounds);
+            
+            final Statistics stats = Statistics.from(benchmarkRuns);
 
             return new Result(description, benchmarkRounds, warmupRounds, warmupTime,
-                benchmarkTime, stats.evaluation, stats.blocked, stats.gc, gcSnapshot, 1);
+                benchmarkTime, stats.evaluation, stats.blocked, stats.gc, gcSnapshot,
+                1, benchmarkRuns);
         }
     }
 
@@ -137,9 +136,9 @@ final class BenchmarkStatement extends Statement
      */
     private final class SequentialEvaluator extends BaseEvaluator
     {
-        SequentialEvaluator(int warmupRounds, int benchmarkRounds, int totalRounds, Clock clock, boolean median)
+        SequentialEvaluator(int warmupRounds, int benchmarkRounds, int totalRounds, Clock clock)
         {
-            super(warmupRounds, benchmarkRounds, totalRounds, clock, median);
+            super(warmupRounds, benchmarkRounds, totalRounds, clock);
         }
 
         @Override
@@ -196,9 +195,9 @@ final class BenchmarkStatement extends Statement
 
 
         ConcurrentEvaluator(int warmupRounds, int benchmarkRounds, int totalRounds,
-                            int concurrency, Clock clock, boolean median)
+                            int concurrency, Clock clock)
         {
-            super(warmupRounds, benchmarkRounds, totalRounds, clock, median);
+            super(warmupRounds, benchmarkRounds, totalRounds, clock);
 
             this.concurrency = concurrency;
             this.latch = new CountDownLatch(1);
@@ -368,12 +367,10 @@ final class BenchmarkStatement extends Statement
 
         final int totalRounds = warmupRounds + benchmarkRounds;
 
-        final boolean median = getBooleanOption(options.median(), MEDIAN_PROPERTY, BenchmarkOptions.MEDIAN);
-
         final BaseEvaluator evaluator;
         if (concurrency == BenchmarkOptions.CONCURRENCY_SEQUENTIAL)
         {
-            evaluator = new SequentialEvaluator(warmupRounds, benchmarkRounds, totalRounds, options.clock(), median);
+            evaluator = new SequentialEvaluator(warmupRounds, benchmarkRounds, totalRounds, options.clock());
         }
         else
         {
@@ -389,7 +386,7 @@ final class BenchmarkStatement extends Statement
                     : concurrency);
 
             evaluator = new ConcurrentEvaluator(
-                warmupRounds, benchmarkRounds, totalRounds, threads, options.clock(), median);
+                warmupRounds, benchmarkRounds, totalRounds, threads, options.clock());
         }
 
         final Result result = evaluator.evaluate();

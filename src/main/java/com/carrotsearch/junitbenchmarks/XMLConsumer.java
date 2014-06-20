@@ -62,9 +62,12 @@ public final class XMLConsumer extends AutocloseConsumer implements Closeable
         // to SimpleXML or some other XML binding solution.
         b.setLength(0);
         b.append("\t<testname");
-        attribute(b, "classname", result.getTestClassName());
+        attribute(b, "file", result.getTestClass().getSimpleName());
         attribute(b, "name", result.getTestMethodName());
 
+        b.append("\n\t\t");
+        attribute(b, "classname", result.getTestClassName());
+        
         b.append("\n\t\t");
         attribute(b, "benchmark-rounds", Integer.toString(result.benchmarkRounds));
         attribute(b, "warmup-rounds", Integer.toString(result.warmupRounds));
@@ -72,10 +75,16 @@ public final class XMLConsumer extends AutocloseConsumer implements Closeable
         b.append("\n\t\t");
         attribute(b, "round-avg", nf.format(result.roundAverage.avg));
         attribute(b, "round-stddev", nf.format(result.roundAverage.stddev));
+        b.append("\n\t\t");
+        attribute(b, "round-median", nf.format(result.roundAverage.median));
+        attribute(b, "round-mad", nf.format(result.roundAverage.mad));
 
         b.append("\n\t\t");
         attribute(b, "gc-avg", nf.format(result.gcAverage.avg));
         attribute(b, "gc-stddev", nf.format(result.gcAverage.stddev));
+        b.append("\n\t\t");
+        attribute(b, "gc-median", nf.format(result.gcAverage.median));
+        attribute(b, "gc-mad", nf.format(result.gcAverage.mad));
 
         b.append("\n\t\t");
         attribute(b, "gc-invocations", Long.toString(result.gcInfo.accumulatedInvocations()));
@@ -88,8 +97,18 @@ public final class XMLConsumer extends AutocloseConsumer implements Closeable
         b.append("\n\t\t");
         attribute(b, "threads", Integer.toString(result.getThreadCount()));
 
-        b.append("/>\n\n");
+        b.append(">\n");
 
+        for (SingleResult single : result.runs) {
+            b.append("\t\t<run");
+            attribute(b, "evaluation", nf.format(single.evaluationTime()));
+            attribute(b, "gc", nf.format(single.gcTime()));
+            attribute(b, "blocked", nf.format(single.blockTime));
+            b.append("/>\n");
+        }
+        
+        b.append("\t</testname>\n\n");        
+        
         writer.write(b.toString());
         writer.flush();
     }
