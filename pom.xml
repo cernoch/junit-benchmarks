@@ -3,13 +3,6 @@
 
   <modelVersion>4.0.0</modelVersion>
 
-  <!-- We use SonaType for publishing artefacts. Parent POM makes things easier here. -->
-  <parent>
-    <groupId>org.sonatype.oss</groupId>
-    <artifactId>oss-parent</artifactId>
-    <version>7</version>
-  </parent>
-
   <!-- Project info. -->
   <groupId>com.carrotsearch</groupId>
   <artifactId>junit-benchmarks</artifactId>
@@ -58,6 +51,13 @@
     <developerConnection>scm:git:git@github.com:carrotsearch/junit-benchmarks.git</developerConnection>
   </scm>
 
+  <distributionManagement>
+    <repository>
+      <id>ida-ssh</id>
+      <url>scpexe://ida/var/www/html/maven</url>
+    </repository>
+  </distributionManagement>
+
   <developers>
     <developer>
       <id>dawid.weiss</id>
@@ -79,7 +79,6 @@
     <maven.compiler.target>1.6</maven.compiler.target>
 
     <clover.version>3.1.0</clover.version>
-    <gpg.passphrase></gpg.passphrase>
   </properties>
 
   <!-- Dependencies. -->
@@ -376,6 +375,15 @@
         </excludes>
       </resource>
     </resources>
+
+    <extensions>
+      <!-- Enabling the use of FTP -->
+      <extension>
+        <groupId>org.apache.maven.wagon</groupId>
+        <artifactId>wagon-ssh-external</artifactId>
+        <version>2.6</version>
+      </extension>
+    </extensions>
   </build>
 
 
